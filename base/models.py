@@ -4,8 +4,8 @@ from django.contrib.auth.models import AbstractUser
 
 
 class Subject(models.Model):
-    name = models.CharField()
-    code = models.CharField()
+    name = models.CharField(max_length=70, )
+    code = models.CharField(max_length=70, )
     user = models.ManyToManyField('User', through='UserSubject')
     is_deactivated = models.BooleanField()
 
@@ -16,28 +16,28 @@ class User(AbstractUser):
         STUDENT = "STUDENT", "Student"
     number = models.IntegerField()
     photo = models.ImageField()
-    role = models.CharField(choices=UserRole.choices)
+    role = models.CharField(max_length=70, choices=UserRole.choices)
 
 
 class UserSubject(models.Model):
-    user = models.ForeignKey(User)
-    subject = models.ForeignKey(Subject)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
 
 
 class Project(models.Model):
-    name = models.CharField()
-    user = models.ForeignKey(User)
-    subject = models.ForeignKey(Subject)
-    executor = models.ManyToManyField('User', through='ProjectUser')
+    name = models.CharField(max_length=70, )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    users = models.ManyToManyField(User, through='ProjectUser', related_name='user_projects')
 
 
 class ProjectUser(models.Model):
-    project = models.ForeignKey(Project)
-    user = models.ForeignKey(User)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class Status(models.Model):
-    name = models.CharField()
+    name = models.CharField(max_length=70, )
 
 
 class ProjectTask(models.Model):
@@ -46,22 +46,23 @@ class ProjectTask(models.Model):
         HIGH = "HIGH", "High"
         NORMAL = "NORMAL", "Normal"
         LOW = "Low"
-    project = models.ForeignKey(Project)
+    description = models.TextField()
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
     date = models.DateField()
-    user = models.ForeignKey(User)
-    executor = models.ManyToManyField(ProjectUser)
-    priority = models.CharField(TaskPriority.choices)
-    status = models.ForeignKey(Status)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    project_user = models.ManyToManyField(ProjectUser)
+    priority = models.CharField(max_length=70, choices=TaskPriority.choices)
+    status = models.ForeignKey(Status, on_delete=models.CASCADE)
     is_deactivated = models.BooleanField()
 
 
 class SubTask(models.Model):
-    name = models.CharField()
-    project_task = models.ForeignKey(ProjectTask)
+    name = models.CharField(max_length=70)
+    project_task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE)
 
 
 class ProjectTaskComment(models.Model):
     date = models.DateField()
     description = models.TextField()
-    user = models.ForeignKey(User)
-    project_task = models.ForeignKey(ProjectTask)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    project_task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE)
