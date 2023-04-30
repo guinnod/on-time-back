@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProjectTask, Project, Subject
+from .models import ProjectTask, Project, Subject, Status
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -14,13 +14,16 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ProjectTaskSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProjectTask
-        fields = '__all__'
+class ProjectTaskSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    status = serializers.CharField()
+    comments = serializers.IntegerField()
+    all_subtasks = serializers.IntegerField()
+    done_subtasks = serializers.IntegerField()
+    project_users = serializers.ListField()
 
 
 class ProjectTaskDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectTask
-        fields = '__all__'
+        fields = ['description', 'priority', 'date', 'project_user', 'status']

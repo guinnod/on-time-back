@@ -65,6 +65,7 @@ class ProjectTask(models.Model):
         NORMAL = "NORMAL", "Normal"
         LOW = "Low"
 
+    name = models.CharField(max_length=70)
     description = models.TextField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     date = models.DateField()
@@ -78,6 +79,7 @@ class ProjectTask(models.Model):
 class SubTask(models.Model):
     name = models.CharField(max_length=70)
     project_task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE)
+    is_done = models.BooleanField()
 
 
 class ProjectTaskComment(models.Model):

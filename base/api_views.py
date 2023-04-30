@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Project, ProjectUser, User
+from .models import Project, ProjectUser, User, ProjectTask
 from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
@@ -38,9 +38,10 @@ class TaskList(APIView):
     def get(self, request):
         user = request.user
         tasks = []
+        taskss = ProjectTask.objects.get(pk=1)
         for projectuser in user.projectuser_set.all():
             for task in projectuser.projecttask_set.all():
-                tasks.append(task)
+                tasks.append({"name": task.name, "status": task.status.name, "comments": len(task.projecttaskcomment_set.all()), "all_subtasks": len(task.subtask_set.all()), "done_subtasks": 5, "project_users": []})
         serializer = ProjectTaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
