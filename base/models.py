@@ -14,9 +14,9 @@ class User(AbstractUser):
     class UserRole(models.TextChoices):
         ADMIN = "ADMIN", "Admin"
         STUDENT = "STUDENT", "Student"
-    number = models.IntegerField()
-    photo = models.ImageField()
-    role = models.CharField(max_length=70, choices=UserRole.choices)
+    number = models.IntegerField(null=True)
+    photo = models.ImageField(null=True)
+    role = models.CharField(max_length=70, choices=UserRole.choices, null=True)
 
 
 class UserSubject(models.Model):

@@ -1,7 +1,9 @@
 from django.urls import path
+from . import api_views
+
 
 urlpatterns = [
-    # path('auth/', 'base.urls'),
+    path('auth/', api_views.Login.as_view()),
     # path('auth/register/', 'base.urls'),
     # path('auth/forgot/', 'base.urls'),
     # path('profile/edit/photo/', 'base.urls'),
