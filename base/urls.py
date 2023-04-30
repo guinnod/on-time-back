@@ -1,9 +1,14 @@
 from django.urls import path
 from . import api_views
+from django.contrib.auth.views import LogoutView
 
 
 urlpatterns = [
     path('auth/', api_views.Login.as_view()),
+    path('auth/logout/', LogoutView.as_view()),
+    path('subject/', api_views.SubjectList.as_view()),
+    path('project/', api_views.ProjectList.as_view()),
+    path('tasks/', api_views.TaskList.as_view()),
     # path('auth/register/', 'base.urls'),
     # path('auth/forgot/', 'base.urls'),
     # path('profile/edit/photo/', 'base.urls'),

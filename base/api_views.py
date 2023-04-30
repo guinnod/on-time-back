@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from .models import Project, ProjectUser, User
 from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_200_OK
 
 
@@ -19,7 +19,7 @@ class Login(APIView):
 class SubjectList(APIView):
     def get(self, request):
         user = request.user
-        subjects = user.subject_set()
+        subjects = user.subject_set.all()
         serializer = SubjectSerializer(subjects, many=True)
         return Response(serializer.data)
 
@@ -27,10 +27,21 @@ class SubjectList(APIView):
 class ProjectList(APIView):
     def get(self, request):
         user = request.user
-        projects = [p for p in user.project_set.all()]
+        projects = set([p for p in user.project_set.all()])
         for p in user.projectuser_set.all():
-            projects.append(p.project)
+            projects.add(p.project)
         serializer = ProjectSerializer(projects, many=True)
+        return Response(serializer.data)
+
+
+class TaskList(APIView):
+    def get(self, request):
+        user = request.user
+        tasks = []
+        for projectuser in user.projectuser_set.all():
+            for task in projectuser.projecttask_set.all():
+                tasks.append(task)
+        serializer = ProjectTaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
 
