@@ -20,6 +20,7 @@ class User(AbstractUser):
         ADMIN = "ADMIN", "Admin"
         STUDENT = "STUDENT", "Student"
 
+    email = models.EmailField(unique=True, max_length=254)
     number = models.IntegerField(null=True)
     photo = models.ImageField(null=True)
     role = models.CharField(max_length=70, choices=UserRole.choices, null=True)
