@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 import random
 
 User = get_user_model()
@@ -41,7 +42,7 @@ class Register(APIView):
     def post(self, request):
         email = request.data.get('email')
         full_name = request.data.get('fullName')
-        photo = request.FILES.get('photo', None)
+        photo = request.FILES.get('photo')
         first_name, last_name = full_name.split(' ', 1)
         if len(User.objects.filter(email=email)) > 0:
             return Response('Email is already taken or confirmation code is already send', status=HTTP_400_BAD_REQUEST)
@@ -81,9 +82,21 @@ class Confirm(APIView):
         return Response('Invalid token', HTTP_400_BAD_REQUEST)
 
 
+class EditProfile(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        if 'photo' in request.data:
+            user.photo = request.data.get('photo')
+            user.save()
+        return Response('Saved!', HTTP_200_OK)
+
+
 class SubjectList(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     def get(self, request):
-        print(vars(request))
         user = request.user
         subjects = user.subject_set.all()
         serializer = SubjectSerializer(subjects, many=True)
