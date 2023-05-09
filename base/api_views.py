@@ -11,8 +11,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import random
-from PIL import Image
-from django.http import FileResponse, HttpResponse
 
 User = get_user_model()
 
