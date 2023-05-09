@@ -89,7 +89,18 @@ class EditProfile(APIView):
         user = request.user
         if 'photo' in request.data:
             user.photo = request.data.get('photo')
-            user.save()
+        if 'email' in request.data:
+            email = request.data.get('email')
+            if len(User.objects.filter(email=email)) > 0:
+                return Response('Email is already taken', status=HTTP_400_BAD_REQUEST)
+            user.email = email
+            user.username = email
+        if 'fullName' in request.data:
+            full_name = request.data.get('fullName')
+            first_name, last_name = full_name.split(' ', 1)
+            user.first_name = first_name
+            user.last_name = last_name
+        user.save()
         return Response('Saved!', HTTP_200_OK)
 
 
