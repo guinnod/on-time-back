@@ -57,7 +57,7 @@ class Register(APIView):
             return Response('Email is already taken or confirmation code is already send', status=HTTP_400_BAD_REQUEST)
         user = User(username=email, email=email, first_name=first_name, last_name=last_name,
                     confirm_code=random.randint(1000, 9999))
-        if photo is not None:
+        if bool(photo):
             user.photo = photo
         user.is_active = False
         user.save()
@@ -94,14 +94,60 @@ class Confirm(APIView):
         return Response('Invalid token', HTTP_400_BAD_REQUEST)
 
 
+class ChangePassword(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        if user.password != request.data.get('password'):
+            return Response('Invalid current password!', HTTP_400_BAD_REQUEST)
+        if 8 > len(request.data.get('newPassword')) or len(request.data.get('newPassword')) > 20:
+            return Response('Incorrect format!', HTTP_400_BAD_REQUEST)
+        user.password = request.data.get('newPassword')
+        user.save()
+        return Response("Password changed!", HTTP_200_OK)
+
+
+class ForgotPassword(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        if len(User.objects.filter(email=email)) == 0:
+            return Response('Email does not exist!', HTTP_400_BAD_REQUEST)
+        user = User.objects.get(email=email)
+        code = random.randint(1000, 9999)
+        user.confirm_code = code
+        user.save()
+        return Response({'data': 'Token send', 'token': code}, HTTP_200_OK)
+
+    def put(self, request):
+        code = request.data.get('code')
+        email = request.data.get('email')
+        user = User.objects.get(email=email)
+        if str(user.confirm_code) != code:
+            return Response('Invalid code!', HTTP_400_BAD_REQUEST)
+        password = request.data.get('password')
+        if 8 > len(password) or len(password) > 20:
+            return Response('Invalid password format!', HTTP_400_BAD_REQUEST)
+        user.confirm_code = None
+        user.password = password
+        user.save()
+        return Response('Success!', HTTP_200_OK)
+
+
+
+
+
 class EditProfile(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        photo = 'no'
+        if bool(user.photo):
+            photo = user.photo.url
         return Response(
-            {'email': user.email, 'fullName': str(user.first_name + " " + user.last_name), 'photo': user.photo.url})
+            {'email': user.email, 'fullName': str(user.first_name + " " + user.last_name), 'photo': photo})
 
     def post(self, request):
         user = request.user

@@ -7,6 +7,8 @@ urlpatterns = [
     path('login/', api_views.Login.as_view()),
     path('register/', api_views.Register.as_view()),
     path('confirm/', api_views.Confirm.as_view()),
+    path('change-password/', api_views.ChangePassword.as_view()),
+    path('forgot-password/', api_views.ForgotPassword.as_view()),
     path('edit-profile/', api_views.EditProfile.as_view()),
     path('subject/', api_views.SubjectList.as_view()),
     path('project/', api_views.ProjectList.as_view()),
