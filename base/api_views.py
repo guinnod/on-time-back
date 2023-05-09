@@ -1,16 +1,13 @@
 from .models import Project, ProjectUser, ProjectTask
 from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate
 from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.crypto import get_random_string
-from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+import random
 
 User = get_user_model()
 
@@ -40,45 +37,48 @@ class Login(APIView):
         }, status=HTTP_200_OK)
 
 
-class RegisterAPIView(APIView):
+class Register(APIView):
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
+        email = request.data.get('email')
+        full_name = request.data.get('fullName')
+        photo = request.FILES.get('photo', None)
+        first_name, last_name = full_name.split(' ', 1)
+        if len(User.objects.filter(email=email)) > 0:
+            return Response('Email is already taken or confirmation code is already send', status=HTTP_400_BAD_REQUEST)
+        user = User(username=email,  email=email, first_name=first_name, last_name=last_name, confirm_code=random.randint(1000, 9999))
+        if photo is not None:
+            user.photo = photo
+        user.is_active = False
+        user.save()
+        return Response({'data': 'Please confirm your email address to complete the registration', 'token': user.confirm_code}, status=HTTP_200_OK)
 
-            confirmation_code = get_random_string(length=16)
 
-            user = serializer.save()
-
-            user.confirmation_code = confirmation_code
-
-            subject = 'Please confirm your email address'
-            message = render_to_string('registration/confirmation_email.html', {
-                'user': user,
-                'confirmation_code': confirmation_code,
-            })
-            from_email = 'noreply@example.com'
-            recipient_list = [user.email]
-            send_mail(subject, message, from_email, recipient_list)
-
-            # Return a response indicating that the user needs to confirm their email address
-            return Response({'detail': 'Please check your email to confirm your address.'},
-                            status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class Confirm(APIView):
+    def post(self, request):
+        token = request.data.get('token')
+        email = request.data.get('email')
+        if len(User.objects.filter(email=email)) == 0:
+            return Response({'error': 'Invalid email'}, status=HTTP_400_BAD_REQUEST)
+        user = User.objects.get(email=email)
+        if str(user.confirm_code) == token:
+            new_token = random.randint(1000, 9999)
+            user.confirm_code = new_token
+            user.save()
+            return Response({'data': 'Success! You can create password', 'token': new_token}, HTTP_200_OK)
+        return Response({'error': 'Invalid token'}, status=HTTP_400_BAD_REQUEST)
 
     def put(self, request):
-        confirmation_code = request.data.get('confirmation_code')
-        password = request.data.get('password')
-
-        try:
-            user = User.objects.get(confirmation_code=confirmation_code)
-        except User.DoesNotExist:
-            return Response({'detail': 'Invalid confirmation code.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        user.set_password(password)
-        user.save()
-
-        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+        email = request.data.get('email')
+        user_token = request.data.get('token')
+        user = User.objects.get(email=email)
+        if str(user.confirm_code) == user_token:
+            password = request.data.get('password')
+            user.password = password
+            user.confirm_code = None
+            user.is_active = True
+            user.save()
+            return Response('Congratulations!', HTTP_200_OK)
+        return Response('Invalid token', HTTP_400_BAD_REQUEST)
 
 
 class SubjectList(APIView):

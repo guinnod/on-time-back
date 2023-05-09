@@ -21,6 +21,7 @@ class User(AbstractUser):
         STUDENT = "STUDENT", "Student"
 
     email = models.EmailField(unique=True, max_length=254)
+    confirm_code = models.IntegerField(null=True)
     number = models.IntegerField(null=True)
     photo = models.ImageField(null=True)
     role = models.CharField(max_length=70, choices=UserRole.choices, null=True)
