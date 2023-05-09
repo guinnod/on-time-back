@@ -1,3 +1,5 @@
+import io
+
 from .models import Project, ProjectUser, ProjectTask
 from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer
 from django.contrib.auth import authenticate
@@ -9,8 +11,17 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import random
+from PIL import Image
+from django.http import FileResponse, HttpResponse
 
 User = get_user_model()
+
+import os
+
+
+def get_image_path(relative_path):
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_dir, relative_path)
 
 
 class CheckAuth(APIView):
@@ -46,12 +57,15 @@ class Register(APIView):
         first_name, last_name = full_name.split(' ', 1)
         if len(User.objects.filter(email=email)) > 0:
             return Response('Email is already taken or confirmation code is already send', status=HTTP_400_BAD_REQUEST)
-        user = User(username=email,  email=email, first_name=first_name, last_name=last_name, confirm_code=random.randint(1000, 9999))
+        user = User(username=email, email=email, first_name=first_name, last_name=last_name,
+                    confirm_code=random.randint(1000, 9999))
         if photo is not None:
             user.photo = photo
         user.is_active = False
         user.save()
-        return Response({'data': 'Please confirm your email address to complete the registration', 'token': user.confirm_code}, status=HTTP_200_OK)
+        return Response(
+            {'data': 'Please confirm your email address to complete the registration', 'token': user.confirm_code},
+            status=HTTP_200_OK)
 
 
 class Confirm(APIView):
@@ -85,13 +99,19 @@ class Confirm(APIView):
 class EditProfile(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response(
+            {'email': user.email, 'fullName': str(user.first_name + " " + user.last_name), 'photo': user.photo.url})
+
     def post(self, request):
         user = request.user
         if 'photo' in request.data:
             user.photo = request.data.get('photo')
         if 'email' in request.data:
             email = request.data.get('email')
-            if len(User.objects.filter(email=email)) > 0:
+            if len(User.objects.filter(email=email)) > 0 and user.email != email:
                 return Response('Email is already taken', status=HTTP_400_BAD_REQUEST)
             user.email = email
             user.username = email
@@ -107,6 +127,7 @@ class EditProfile(APIView):
 class SubjectList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user = request.user
         subjects = user.subject_set.all()
