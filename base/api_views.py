@@ -1,7 +1,7 @@
 import io
 
-from .models import Project, ProjectUser, ProjectTask
-from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer
+from .models import Project, ProjectUser, ProjectTask, Subject
+from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer, UserSerializer
 from django.contrib.auth import authenticate
 from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from django.contrib.auth import get_user_model
@@ -31,7 +31,24 @@ class CheckAuth(APIView):
 
 
 class Temp(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     def post(self, request):
+        user = request.user
+        subject = Subject.objects.get(name=request.data.get('subject'))
+        project_name = request.data.get('name')
+        if request.user.project_set.filter(user=user, subject=subject, name=project_name).exists():
+            return Response({"Project already exists"})
+        project = Project(user=user, subject=subject, name=project_name)
+        project.save()
+        project_user = ProjectUser(project=project, user=user)
+        project_user.save()
+        for email in request.data.get('users'):
+            user = User.objects.get(email=email)
+            print(user.user_projects.filter(pk=project.pk))
+            if not user.user_projects.filter(pk=project.pk).exists():
+                project_user = ProjectUser(project=project, user=user)
+                project_user.save()
         return Response({}, status=HTTP_200_OK)
 
 
@@ -97,6 +114,7 @@ class Confirm(APIView):
 class ChangePassword(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         user = request.user
         if user.password != request.data.get('password'):
@@ -132,9 +150,6 @@ class ForgotPassword(APIView):
         user.password = password
         user.save()
         return Response('Success!', HTTP_200_OK)
-
-
-
 
 
 class EditProfile(APIView):
@@ -179,12 +194,20 @@ class SubjectList(APIView):
         return Response(serializer.data)
 
 
+class StudentsList(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+
 class ProjectList(APIView):
     def get(self, request):
         user = request.user
-        projects = set([p for p in user.project_set.all()])
-        for p in user.projectuser_set.all():
-            projects.add(p.project)
+        projects = user.user_projects.all()
         serializer = ProjectSerializer(projects, many=True)
         return Response(serializer.data)
 
@@ -192,14 +215,7 @@ class ProjectList(APIView):
 class TaskList(APIView):
     def get(self, request):
         user = request.user
-        tasks = []
-        taskss = ProjectTask.objects.get(pk=1)
-        for projectuser in user.projectuser_set.all():
-            for task in projectuser.projecttask_set.all():
-                tasks.append(
-                    {"name": task.name, "status": task.status.name, "comments": len(task.projecttaskcomment_set.all()),
-                     "all_subtasks": len(task.subtask_set.all()), "done_subtasks": 5, "project_users": []})
-        serializer = ProjectTaskSerializer(tasks, many=True)
+
         return Response(serializer.data)
 
 

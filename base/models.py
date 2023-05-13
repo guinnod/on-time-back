@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser
 
 class Subject(models.Model):
     name = models.CharField(max_length=70, )
-    code = models.CharField(max_length=70, )
+    code = models.CharField(max_length=70, unique=True)
     user = models.ManyToManyField('User', through='UserSubject')
     is_deactivated = models.BooleanField()
 
@@ -35,7 +35,7 @@ class UserSubject(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
 
     def __str__(self):
-        return str(self.user) + " " + str(self.subject)
+        return str(self.user) + ": " + str(self.subject).capitalize()
 
 
 class Project(models.Model):
@@ -53,7 +53,7 @@ class ProjectUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return str(self.user) + " " + str(self.project)
+        return str(self.project)
 
 
 class Status(models.Model):
