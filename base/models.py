@@ -72,7 +72,7 @@ class ProjectTask(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     date = models.DateField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    project_user = models.ManyToManyField(ProjectUser)
+    user_task = models.ManyToManyField(User, related_name='user_tasks')
     priority = models.CharField(max_length=70, choices=TaskPriority.choices)
     status = models.ForeignKey(Status, on_delete=models.CASCADE)
     is_deactivated = models.BooleanField()

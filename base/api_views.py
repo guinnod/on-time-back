@@ -213,18 +213,23 @@ class ProjectList(APIView):
 
 
 class TaskList(APIView):
-    def get(self, request):
+    def get(self, request, pk):
         user = request.user
-
+        project = user.user_projects.get(pk=pk)
+        tasks = project.projecttask_set.all()
+        serializer = ProjectTaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
 
 class ProjectTaskList(APIView):
     def get(self, request, pk):
         project = Project.objects.get(pk=pk)
-        project_tasks = project.projecttask_set.all()
-        serializer = ProjectTaskSerializer(project_tasks, many=True)
-        return Response(serializer.data)
+        task = ProjectTask.objects.first()
+        print(task._meta.get_field('project').related_query_name())
+        return 1
+        # project_tasks = project.projecttasks.all()
+        # serializer = ProjectTaskSerializer(project_tasks, many=True)
+        # return Response(serializer.data)
 
 
 class ProjectTaskDetail(APIView):

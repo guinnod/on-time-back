@@ -13,7 +13,7 @@ urlpatterns = [
     path('subject/', api_views.SubjectList.as_view()),
     path('students/', api_views.StudentsList.as_view()),
     path('project/', api_views.ProjectList.as_view()),
-    path('tasks/', api_views.TaskList.as_view()),
+    path('task/<int:pk>/', api_views.TaskList.as_view()),
     path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', jwt_views.TokenVerifyView.as_view(), name='token_verify'),
