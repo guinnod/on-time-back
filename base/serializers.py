@@ -91,10 +91,20 @@ class ProjectTaskDetailSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
+    user_photo = serializers.SerializerMethodField()
+    user_name = serializers.SerializerMethodField()
     class Meta:
         model = ProjectTaskComment
-        fields = ['user', 'id', 'project_task', 'description', 'date']
+        fields = ['user', 'id', 'project_task', 'description', 'date', 'user_photo', 'user_name']
 
     def get_user(self, obj):
         user = obj.user
         return str(user.first_name)
+
+    def get_user_photo(self, obj):
+        user = obj.user
+        return str(user.photo.url)
+
+    def get_user_name(self, obj):
+        user = obj.user
+        return str(user.first_name + " " + user.last_name)
