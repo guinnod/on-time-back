@@ -1,7 +1,7 @@
 import io
 
-from .models import Project, ProjectUser, ProjectTask, Subject
-from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer, UserSerializer
+from .models import Project, ProjectUser, ProjectTask, Subject, Status, ProjectTaskComment
+from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer, UserSerializer, CommentSerializer
 from django.contrib.auth import authenticate
 from rest_framework.status import HTTP_404_NOT_FOUND, HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
 from django.contrib.auth import get_user_model
@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import random
-
+from django.shortcuts import get_object_or_404
 User = get_user_model()
 
 import os
@@ -29,6 +29,64 @@ class CheckAuth(APIView):
         else:
             return Response({'authenticated': False}, status=HTTP_401_UNAUTHORIZED)
 
+
+class AddTask(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        project_id = request.data.get('project_id')
+        project = get_object_or_404(Project, pk=project_id)
+        name = request.data.get('name')
+        status = request.data.get('status')
+        if not Status.objects.filter(name=status).exists():
+            status = Status(name=status)
+        else:
+            status = Status.objects.get(name=status)
+        status.save()
+        priority = request.data.get('priority')
+        description = request.data.get('description')
+        date = request.data.get('date')
+
+        task = ProjectTask(user=user, project=project, name=name, status=status, priority=priority, description=description, date=date, is_deactivated=False)
+        task.save()
+        for email in request.data.get('users'):
+            user = User.objects.get(email=email)
+            user.user_tasks.add(task)
+        return Response({}, HTTP_200_OK)
+
+
+class AddProjectToUser(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        project = user.project_set.get(pk=request.data.get('project_id'))
+        for email in request.data.get('users'):
+            user = User.objects.get(email=email)
+            if not user.user_projects.filter(pk=project.pk).exists():
+                project_user = ProjectUser(project=project, user=user)
+                project_user.save()
+        return Response({}, HTTP_200_OK)
+
+
+class ProjectDetail(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        user = request.user
+        project = user.project_set.get(pk=pk)
+
+        return Response(ProjectSerializer(project).data, HTTP_200_OK)
+class GetProjectUsers(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        project = get_object_or_404(Project, pk=request.data.get('project_id'))
+        users = project.users.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, HTTP_200_OK)
 
 class Temp(APIView):
     authentication_classes = [JWTAuthentication]
@@ -211,6 +269,12 @@ class ProjectList(APIView):
         serializer = ProjectSerializer(projects, many=True)
         return Response(serializer.data)
 
+class AllUserTasks(APIView):
+    def get(self, request):
+        user = request.user
+        tasks = user.user_tasks.all()
+        return Response(ProjectTaskSerializer(tasks, many=True))
+
 
 class TaskList(APIView):
     def get(self, request, pk):
@@ -234,7 +298,25 @@ class ProjectTaskList(APIView):
 
 class ProjectTaskDetail(APIView):
     def get(self, request, pk1, pk2):
-        project = Project.objects.get(pk=pk1)
+        project = request.user.user_projects.get(pk=pk1)
         project_task = project.projecttask_set.get(pk=pk2)
         serializer = ProjectTaskDetailSerializer(project_task)
         return Response(serializer.data)
+
+
+class CommentToTask(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request, pk1, pk2):
+        project = request.user.user_projects.get(pk=pk1)
+        project_task = project.projecttask_set.get(pk=pk2)
+        description = request.data.get('description')
+        comment = ProjectTaskComment(user=request.user, project_task=project_task, description=description)
+        comment.save()
+        return Response({}, HTTP_200_OK)
+
+    def get(self, request, pk1, pk2):
+        project = request.user.user_projects.get(pk=pk1)
+        project_task = project.projecttask_set.get(pk=pk2)
+        comments = project_task.projecttaskcomment_set.all()
+        return Response(CommentSerializer(comments, many=True).data, HTTP_200_OK)

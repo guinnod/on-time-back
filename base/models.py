@@ -85,7 +85,7 @@ class SubTask(models.Model):
 
 
 class ProjectTaskComment(models.Model):
-    date = models.DateField()
+    date = models.DateField(auto_now=True)
     description = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project_task = models.ForeignKey(ProjectTask, on_delete=models.CASCADE)

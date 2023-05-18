@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProjectTask, Project, Subject, Status
+from .models import ProjectTask, Project, Subject, Status, ProjectTaskComment
 from django.contrib.auth import get_user_model
 from .utils import get_image_path
 from itertools import groupby
@@ -9,7 +9,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name']
+        fields = ['email', 'first_name', 'last_name', 'photo']
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -38,7 +38,7 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
     status = StatusSerializer()
     class Meta:
         model = ProjectTask
-        fields = ['id', 'name', 'status', 'comments', 'project_users', 'all_subtasks', 'all_done_subtasks']
+        fields = ['id', 'name', 'status', 'comments', 'project_users', 'all_subtasks', 'all_done_subtasks', 'project']
 
     def get_all_subtasks(self, obj):
         return len(obj.subtask_set.all())
@@ -68,6 +68,33 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 
 
 class ProjectTaskDetailSerializer(serializers.ModelSerializer):
+    author = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    users = serializers.SerializerMethodField()
     class Meta:
         model = ProjectTask
-        fields = ['description', 'priority', 'date', 'project_user', 'status']
+        fields = ['pk', 'description', 'date', 'status', 'author', 'name', 'users', 'project']
+
+    def get_author(self, obj):
+        user = obj.user
+        return str(user.first_name + user.last_name)
+
+    def get_status(self, obj):
+        return obj.status.name
+
+    def get_users(self, obj):
+        users = []
+        for user in obj.user_task.all():
+            users.append(user.photo.url)
+        return users
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    class Meta:
+        model = ProjectTaskComment
+        fields = ['user', 'id', 'project_task', 'description', 'date']
+
+    def get_user(self, obj):
+        user = obj.user
+        return str(user.first_name)
