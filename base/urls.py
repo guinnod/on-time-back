@@ -13,6 +13,7 @@ urlpatterns = [
     path('subject/', api_views.SubjectList.as_view()),
     path('students/', api_views.StudentsList.as_view()),
     path('project/', api_views.ProjectList.as_view()),
+    path('users-project/<str:name>/', api_views.ProjectListDetail.as_view()),
     path('project/<int:pk>/', api_views.ProjectDetail.as_view()),
     path('task/<int:pk>/', api_views.TaskList.as_view()),
     path('token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -26,5 +27,6 @@ urlpatterns = [
     path('task-detail/<int:pk1>/<int:pk2>/', api_views.ProjectTaskDetail.as_view()),
     path('add-comment/<int:pk1>/<int:pk2>/', api_views.CommentToTask.as_view()),
     path('set-subtask/<int:pk1>/<int:pk2>/', api_views.SetSubTask.as_view()),
+    path('update-task/<int:pk1>/<int:pk2>/', api_views.UpdateTask.as_view()),
     path('all-tasks/', api_views.AllUserTasks.as_view()),
 ]
