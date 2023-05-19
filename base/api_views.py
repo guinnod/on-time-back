@@ -76,7 +76,7 @@ class ProjectDetail(APIView):
 
     def get(self, request, pk):
         user = request.user
-        project = user.project_set.get(pk=pk)
+        project = user.user_projects.get(pk=pk)
 
         return Response(ProjectSerializer(project).data, HTTP_200_OK)
 class GetProjectUsers(APIView):
@@ -320,3 +320,17 @@ class CommentToTask(APIView):
         project_task = project.projecttask_set.get(pk=pk2)
         comments = project_task.projecttaskcomment_set.all()
         return Response(CommentSerializer(comments, many=True).data, HTTP_200_OK)
+
+
+class SetSubTask(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk1, pk2):
+        project = request.user.user_projects.get(pk=pk1)
+        project_task = project.projecttask_set.get(pk=pk2)
+        is_done = request.data.get('is_done')
+        subtask = project_task.subtask_set.get(pk=request.data.get('pk'))
+        subtask.is_done = is_done
+        subtask.save()
+        return Response({}, HTTP_200_OK)

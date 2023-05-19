@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProjectTask, Project, Subject, Status, ProjectTaskComment
+from .models import ProjectTask, Project, Subject, Status, ProjectTaskComment, SubTask
 from django.contrib.auth import get_user_model
 from .utils import get_image_path
 from itertools import groupby
@@ -64,16 +64,20 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
         return grouped_representation
 
 
-
+class SubtaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubTask
+        fields = ["pk", "name", "is_done"]
 
 
 class ProjectTaskDetailSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     users = serializers.SerializerMethodField()
+    subtask_set = SubtaskSerializer(many=True)
     class Meta:
         model = ProjectTask
-        fields = ['pk', 'description', 'date', 'status', 'author', 'name', 'users', 'project']
+        fields = ['pk', 'description', 'date', 'status', 'author', 'name', 'users', 'project', "subtask_set"]
 
     def get_author(self, obj):
         user = obj.user
@@ -87,6 +91,8 @@ class ProjectTaskDetailSerializer(serializers.ModelSerializer):
         for user in obj.user_task.all():
             users.append(user.photo.url)
         return users
+
+
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -108,3 +114,4 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_user_name(self, obj):
         user = obj.user
         return str(user.first_name + " " + user.last_name)
+

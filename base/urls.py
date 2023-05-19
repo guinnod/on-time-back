@@ -25,5 +25,6 @@ urlpatterns = [
     path('add-user-project/', api_views.AddProjectToUser.as_view()),
     path('task-detail/<int:pk1>/<int:pk2>/', api_views.ProjectTaskDetail.as_view()),
     path('add-comment/<int:pk1>/<int:pk2>/', api_views.CommentToTask.as_view()),
+    path('set-subtask/<int:pk1>/<int:pk2>/', api_views.SetSubTask.as_view()),
     path('all-tasks/', api_views.AllUserTasks.as_view()),
 ]
