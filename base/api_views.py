@@ -1,5 +1,7 @@
 import io
 
+from django.core.mail import send_mail
+
 from .models import Project, ProjectUser, ProjectTask, Subject, Status, ProjectTaskComment, SubTask
 from .serializers import ProjectTaskSerializer, ProjectTaskDetailSerializer, ProjectSerializer, SubjectSerializer, SubtaskSerializer, UserSerializer, CommentSerializer
 from django.contrib.auth import authenticate
@@ -136,8 +138,15 @@ class Register(APIView):
             user.photo = photo
         user.is_active = False
         user.save()
+        send_mail(
+            'Subject',
+            str(user.confirm_code),
+            'ontimesdu@gmail.com',
+            [email],
+            fail_silently=False,
+        )
         return Response(
-            {'data': 'Please confirm your email address to complete the registration', 'token': user.confirm_code},
+            {'data': 'Please confirm your email address to complete the registration'},
             status=HTTP_200_OK)
 
 
