@@ -1,0 +1,4 @@
+**/.idea/
+**/uploads/
+.env
+**/__pycache__/
